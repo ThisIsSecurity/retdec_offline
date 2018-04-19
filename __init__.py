@@ -154,12 +154,14 @@ class RetDec(object):
     def decompile(self, inputfile):
         with tempfile.NamedTemporaryFile(mode='w') as conf:
             json.dump(self.conf.dump(), conf)
+            conf.flush()
             self._cmdline.extend(['--config', conf.name])
             self._cmdline.append(inputfile)
             log.log_info(" ".join(self._cmdline))
 
             p = Popen(self._cmdline, stdout=PIPE, stderr=PIPE)
             _, err = p.communicate()
+            log.log_info(err)
             if err.startswith('Error'):
                 raise ExceptionWithMessageBox('decompilation error', err)
 
@@ -192,6 +194,7 @@ class RetDec(object):
         raw = self._view.read(start, end - start)
 
         output.write(raw)
+        output.flush()
 
     def merge_symbols(self, code):
         pcode = []
@@ -237,6 +240,6 @@ def decompile(view, function):
         retdec = RetDec(view, function)
         retdec.decompile_function()
     except Exception as e:
-        log.log_error('failed to decompile function\n{}'.format(e.message))
+        log.log_error('failed to decompile function: {}'.format(e))
 
 PluginCommand.register_for_function('RetDec Offline Decompiler', 'Decompile', decompile)
