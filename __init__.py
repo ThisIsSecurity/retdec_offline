@@ -173,7 +173,7 @@ class RetDec(object):
 
         return code
 
-    def decompile_function(self):
+    def decompile_raw(self):
         self._cmdline.extend(['--mode', 'raw'])
         self._cmdline.extend(['--raw-section-vma', '{:#x}'.format(self._function.start)])
         self._cmdline.extend(['--raw-entry-point', '{:#x}'.format(self._function.start)])
@@ -195,6 +195,24 @@ class RetDec(object):
 
         output.write(raw)
         output.flush()
+
+    def decompile_bin(self):
+        self._cmdline.extend(['--mode', 'bin'])
+        self._cmdline.extend(['--arch', self.conf.arch])
+        self._cmdline.extend(['--endian', self.conf.endianness])
+        self._cmdline.extend(['--select-ranges', '{:#x}-{:#x}'.format(self._function.start,
+                                                                      self._function.start+1)])
+
+        with tempfile.NamedTemporaryFile('w+b') as f:
+            self.load_bin(f)
+
+            code = self.decompile(f.name)
+
+        code = self.merge_symbols(code)
+        self.render_output(code)
+
+    def load_bin(self, output):
+        output.write(self._view.file.raw.read(0, len(self._view.file.raw)))
 
     def merge_symbols(self, code):
         pcode = []
@@ -235,11 +253,20 @@ class RetDec(object):
         colored_code = highlight(code, lexer, formatter)
         show_html_report('{}.c'.format(self._function.name), colored_code)
 
-def decompile(view, function):
+def decompile_raw(view, function):
     try:
         retdec = RetDec(view, function)
-        retdec.decompile_function()
+        retdec.decompile_raw()
     except Exception as e:
         log.log_error('failed to decompile function: {}'.format(e))
 
-PluginCommand.register_for_function('RetDec Offline Decompiler', 'Decompile', decompile)
+def decompile_bin(view, function):
+    try:
+        retdec = RetDec(view, function)
+        retdec.decompile_bin()
+    except Exception as e:
+        log.log_error('failed to decompile function: {}'.format(e))
+
+PluginCommand.register_for_function('RetDec Offline Decompiler', 'Decompile-Fast', decompile_raw)
+PluginCommand.register_for_function('RetDec Offline Decompiler (Full Binary Analysis)',
+                                    'Decompile-Slow', decompile_bin)
