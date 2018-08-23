@@ -48,7 +48,7 @@ class RetDecFunctionConfig(RetDecConfig):
                            "CC_SPECIAL"]
 
     def __init__(self, start_addr):
-        self._conf = {'startAddr': start_addr}
+        self._conf = {'startAddr': str(start_addr)}
 
     @property
     def calling_convention(self):
@@ -147,7 +147,7 @@ class RetDec(object):
         self.conf = RetDecConfigFactory.main(self._view)
         self.conf.add_function(RetDecConfigFactory.func(self._function))
 
-        self._cmdline = ['retdec-decompiler.sh']
+        self._cmdline = ['retdec-decompiler.py']
         self._cmdline.append('--backend-no-debug-comments')
         self._cmdline.append('--cleanup')
 
