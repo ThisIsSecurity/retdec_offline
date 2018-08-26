@@ -220,6 +220,12 @@ class RetDec(object):
 
             code = self.decompile(f.name)
 
+            try:
+                f.close()
+                os.unlink(f.name)
+            except OSError:
+                pass
+
         code = self.merge_symbols(code)
         self.render_output(code)
 
