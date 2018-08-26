@@ -152,7 +152,7 @@ class RetDec(object):
         self._cmdline.append('--cleanup')
 
     def decompile(self, inputfile):
-        with tempfile.NamedTemporaryFile(mode='w') as conf:
+        with tempfile.NamedTemporaryFile(mode='w', delete=False) as conf:
             json.dump(self.conf.dump(), conf)
             conf.flush()
             self._cmdline.extend(['--config', conf.name])
@@ -170,6 +170,12 @@ class RetDec(object):
 
             os.unlink('{}.c'.format(inputfile))
             os.unlink('{}.c.frontend.dsm'.format(inputfile))
+            
+            try:
+                conf.close()
+                os.unlink(conf.name)
+            except:
+                pass
 
         return code
 
@@ -184,6 +190,12 @@ class RetDec(object):
             self.load_function(f)
 
             code = self.decompile(f.name)
+            
+            try:
+                f.close()
+                os.unlink(f.name)
+            except:
+                pass
 
         code = self.merge_symbols(code)
         self.render_output(code)
