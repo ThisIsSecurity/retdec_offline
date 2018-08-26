@@ -170,11 +170,11 @@ class RetDec(object):
 
             os.unlink('{}.c'.format(inputfile))
             os.unlink('{}.c.frontend.dsm'.format(inputfile))
-            
+
             try:
                 conf.close()
                 os.unlink(conf.name)
-            except:
+            except OSError:
                 pass
 
         return code
@@ -190,11 +190,11 @@ class RetDec(object):
             self.load_function(f)
 
             code = self.decompile(f.name)
-            
+
             try:
                 f.close()
                 os.unlink(f.name)
-            except:
+            except OSError:
                 pass
 
         code = self.merge_symbols(code)
