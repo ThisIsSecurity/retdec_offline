@@ -178,7 +178,7 @@ class RetDec(object):
             os.unlink('{}.c.frontend.dsm'.format(inputfile))
 
         os.unlink(tmpfilename)
-       
+
         return code
 
     def decompile_raw(self):
