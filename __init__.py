@@ -152,14 +152,19 @@ class RetDec(object):
         self._cmdline.append('--cleanup')
 
     def decompile(self, inputfile):
+        # On Windows, autodeleting temp files are locked by their owning process,
+        # meaning you can't use them to pass input to other programs. Using delete=False and
+        # unlinking after is an accepted workaround for this.
+        # See https://bugs.python.org/issue14243
         with tempfile.NamedTemporaryFile(mode='w', delete=False) as conf:
+            tmpfilename = conf.name
             json.dump(self.conf.dump(), conf)
             conf.flush()
             self._cmdline.extend(['--config', conf.name])
             self._cmdline.append(inputfile)
             log.log_info(" ".join(self._cmdline))
 
-            p = Popen(self._cmdline, stdout=PIPE, stderr=PIPE)
+            p = Popen(self._cmdline, stdout=PIPE, stderr=PIPE, shell=True)
             _, err = p.communicate()
             log.log_info(err)
             if err.startswith('Error'):
@@ -215,16 +220,13 @@ class RetDec(object):
         self._cmdline.extend(['--select-ranges', '{:#x}-{:#x}'.format(self._function.start,
                                                                       self._function.start+1)])
 
-        with tempfile.NamedTemporaryFile('w+b') as f:
+        with tempfile.NamedTemporaryFile(mode='w+b', delete=False) as f:
+            tmpfilename = f.name
             self.load_bin(f)
 
             code = self.decompile(f.name)
 
-            try:
-                f.close()
-                os.unlink(f.name)
-            except OSError:
-                pass
+        os.unlink(tmpfilename)
 
         code = self.merge_symbols(code)
         self.render_output(code)
