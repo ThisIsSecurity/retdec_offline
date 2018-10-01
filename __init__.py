@@ -156,6 +156,7 @@ class RetDec(object):
         # meaning you can't use them to pass input to other programs. Using delete=False and
         # unlinking after is an accepted workaround for this.
         # See https://bugs.python.org/issue14243
+        tmpfilename = None
         with tempfile.NamedTemporaryFile(mode='w', delete=False) as conf:
             tmpfilename = conf.name
             json.dump(self.conf.dump(), conf)
@@ -176,12 +177,8 @@ class RetDec(object):
             os.unlink('{}.c'.format(inputfile))
             os.unlink('{}.c.frontend.dsm'.format(inputfile))
 
-            try:
-                conf.close()
-                os.unlink(conf.name)
-            except OSError:
-                pass
-
+        os.unlink(tmpfilename)
+       
         return code
 
     def decompile_raw(self):
@@ -191,16 +188,14 @@ class RetDec(object):
         self._cmdline.extend(['--arch', self.conf.arch])
         self._cmdline.extend(['--endian', self.conf.endianness])
 
-        with tempfile.NamedTemporaryFile('w+b') as f:
+        tmpfilename = None
+        with tempfile.NamedTemporaryFile(mode='w+b', delete=False) as f:
+            tmpfilename = f.name
             self.load_function(f)
 
             code = self.decompile(f.name)
 
-            try:
-                f.close()
-                os.unlink(f.name)
-            except OSError:
-                pass
+        os.unlink(tmpfilename)
 
         code = self.merge_symbols(code)
         self.render_output(code)
@@ -220,6 +215,7 @@ class RetDec(object):
         self._cmdline.extend(['--select-ranges', '{:#x}-{:#x}'.format(self._function.start,
                                                                       self._function.start+1)])
 
+        tmpfilename = None
         with tempfile.NamedTemporaryFile(mode='w+b', delete=False) as f:
             tmpfilename = f.name
             self.load_bin(f)
