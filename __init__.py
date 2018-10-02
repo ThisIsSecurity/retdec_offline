@@ -152,14 +152,20 @@ class RetDec(object):
         self._cmdline.append('--cleanup')
 
     def decompile(self, inputfile):
-        with tempfile.NamedTemporaryFile(mode='w') as conf:
+        # On Windows, autodeleting temp files are locked by their owning process,
+        # meaning you can't use them to pass input to other programs. Using delete=False and
+        # unlinking after is an accepted workaround for this.
+        # See https://bugs.python.org/issue14243
+        tmpfilename = None
+        with tempfile.NamedTemporaryFile(mode='w', delete=False) as conf:
+            tmpfilename = conf.name
             json.dump(self.conf.dump(), conf)
             conf.flush()
             self._cmdline.extend(['--config', conf.name])
             self._cmdline.append(inputfile)
             log.log_info(" ".join(self._cmdline))
 
-            p = Popen(self._cmdline, stdout=PIPE, stderr=PIPE)
+            p = Popen(self._cmdline, stdout=PIPE, stderr=PIPE, shell=True)
             _, err = p.communicate()
             log.log_info(err)
             if err.startswith('Error'):
@@ -171,6 +177,8 @@ class RetDec(object):
             os.unlink('{}.c'.format(inputfile))
             os.unlink('{}.c.frontend.dsm'.format(inputfile))
 
+        os.unlink(tmpfilename)
+
         return code
 
     def decompile_raw(self):
@@ -180,10 +188,14 @@ class RetDec(object):
         self._cmdline.extend(['--arch', self.conf.arch])
         self._cmdline.extend(['--endian', self.conf.endianness])
 
-        with tempfile.NamedTemporaryFile('w+b') as f:
+        tmpfilename = None
+        with tempfile.NamedTemporaryFile(mode='w+b', delete=False) as f:
+            tmpfilename = f.name
             self.load_function(f)
 
             code = self.decompile(f.name)
+
+        os.unlink(tmpfilename)
 
         code = self.merge_symbols(code)
         self.render_output(code)
@@ -203,10 +215,14 @@ class RetDec(object):
         self._cmdline.extend(['--select-ranges', '{:#x}-{:#x}'.format(self._function.start,
                                                                       self._function.start+1)])
 
-        with tempfile.NamedTemporaryFile('w+b') as f:
+        tmpfilename = None
+        with tempfile.NamedTemporaryFile(mode='w+b', delete=False) as f:
+            tmpfilename = f.name
             self.load_bin(f)
 
             code = self.decompile(f.name)
+
+        os.unlink(tmpfilename)
 
         code = self.merge_symbols(code)
         self.render_output(code)
