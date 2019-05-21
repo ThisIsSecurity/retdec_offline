@@ -178,7 +178,9 @@ class RetDec(object):
                 code = f.read()
 
             os.unlink('{}.c'.format(inputfile))
-            os.unlink('{}.c.frontend.dsm'.format(inputfile))
+            f = '{}.c.frontend.dsm'.format(inputfile)
+            if os.path.exists(f):
+                os.unlink(f)
 
         os.unlink(tmpfilename)
 
