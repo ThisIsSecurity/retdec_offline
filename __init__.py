@@ -165,7 +165,10 @@ class RetDec(object):
             self._cmdline.append(inputfile)
             log.log_info(" ".join(self._cmdline))
 
-            p = Popen(self._cmdline, stdout=PIPE, stderr=PIPE, shell=True)
+            shell = False
+            if os.name == 'nt':
+                shell = True
+            p = Popen(self._cmdline, stdout=PIPE, stderr=PIPE, shell=shell)
             _, err = p.communicate()
             log.log_info(err)
             if err.startswith('Error'):
