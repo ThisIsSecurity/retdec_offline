@@ -165,7 +165,10 @@ class RetDec(object):
             self._cmdline.append(inputfile)
             log.log_info(" ".join(self._cmdline))
 
-            p = Popen(self._cmdline, stdout=PIPE, stderr=PIPE, shell=True)
+            shell = False
+            if os.name == 'nt':
+                shell = True
+            p = Popen(self._cmdline, stdout=PIPE, stderr=PIPE, shell=shell)
             _, err = p.communicate()
             log.log_info(err)
             if err.startswith('Error'):
@@ -175,7 +178,9 @@ class RetDec(object):
                 code = f.read()
 
             os.unlink('{}.c'.format(inputfile))
-            os.unlink('{}.c.frontend.dsm'.format(inputfile))
+            f = '{}.c.frontend.dsm'.format(inputfile)
+            if os.path.exists(f):
+                os.unlink(f)
 
         os.unlink(tmpfilename)
 
