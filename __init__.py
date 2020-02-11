@@ -147,7 +147,10 @@ class RetDec(object):
         self.conf = RetDecConfigFactory.main(self._view)
         self.conf.add_function(RetDecConfigFactory.func(self._function))
 
-        self._cmdline = ['retdec-decompiler.py']
+        #here under is your python path ex(C:\\Users\\test\\AppData\\Local\\Programs\\Python\\Python37-32\\python.exe)
+        self._cmdline = ['C:\\Users\\test\\AppData\\Local\\Programs\\Python\\Python37-32\\python.exe']
+        #here under is your hardcoded full retdec-decompiler.py path
+        self._cmdline.append('C:\\Users\\test\\Documents\\tools\\retdec\\bin\\retdec-decompiler.py')
         self._cmdline.append('--backend-no-debug-comments')
         self._cmdline.append('--cleanup')
 
@@ -165,10 +168,7 @@ class RetDec(object):
             self._cmdline.append(inputfile)
             log.log_info(" ".join(self._cmdline))
 
-            shell = False
-            if os.name == 'nt':
-                shell = True
-            p = Popen(self._cmdline, stdout=PIPE, stderr=PIPE, shell=shell)
+            p = Popen(self._cmdline, stdout=PIPE, stderr=PIPE, shell=True)
             _, err = p.communicate()
             log.log_info(err)
             if err.startswith('Error'):
@@ -178,9 +178,8 @@ class RetDec(object):
                 code = f.read()
 
             os.unlink('{}.c'.format(inputfile))
-            f = '{}.c.frontend.dsm'.format(inputfile)
-            if os.path.exists(f):
-                os.unlink(f)
+            #removing this file generation due to error
+            # os.unlink('{}.c.frontend.dsm'.format(inputfile))
 
         os.unlink(tmpfilename)
 
@@ -199,6 +198,7 @@ class RetDec(object):
             self.load_function(f)
 
             code = self.decompile(f.name)
+            print("My name is",f.name)
 
         os.unlink(tmpfilename)
 
